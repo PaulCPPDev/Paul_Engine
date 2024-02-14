@@ -12,13 +12,24 @@
 
 
 void Graphics::set_up(){
+	// Initialize SDL
 	if(SDL_Init(SDL_INIT_EVERYTHING) != 0){
 		// Log the error code
 		std::cout << "Error Initializing SDL" << std::endl;
 		this->isRunning = false;
 	}
 	
-	window = SDL_CreateWindow(NULL, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, this->window_width, this->window_height, 0 );
+	// set the Window to full screen
+	SDL_DisplayMode display_mode;
+	SDL_GetCurrentDisplayMode(0, &display_mode);
+	this->window_width = display_mode.w;
+	this->window_height = display_mode.h;
+	if(SDL_SetWindowFullscreen(this->window, SDL_WINDOW_FULLSCREEN) != 0){
+		// Log the error code
+		// std::cout << "Error making the window full screen" << std::endl;
+	}
+	
+	window = SDL_CreateWindow(NULL, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, this->window_width, this->window_height, SDL_WINDOW_BORDERLESS );
 	if(window == NULL){
 		// Log the error code
 		std::cout << "Eror Creating SDL Window" << std::endl;
