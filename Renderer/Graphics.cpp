@@ -11,7 +11,8 @@
 #include <iostream>
 
 
-void Graphics::set_up(){
+void Graphics::init(){
+
 	// Initialize SDL
 	if(SDL_Init(SDL_INIT_EVERYTHING) != 0){
 		// Log the error code
@@ -26,7 +27,7 @@ void Graphics::set_up(){
 	this->window_height = display_mode.h;
 	if(SDL_SetWindowFullscreen(this->window, SDL_WINDOW_FULLSCREEN) != 0){
 		// Log the error code
-		// std::cout << "Error making the window full screen" << std::endl;
+		// std::cout << "Error making the window full screen" << std::endl; // This doesn't work
 	}
 	
 	window = SDL_CreateWindow(NULL, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, this->window_width, this->window_height, SDL_WINDOW_BORDERLESS );
@@ -43,8 +44,20 @@ void Graphics::set_up(){
 		this->isRunning = false;
 	}
 	
+	//color buffer
+	this->color_buffer = new uint32_t[this->window_width * this-> window_height];
 	
-	
+	// Create a color buffer texture to access every single pixel on the screen
+	this->color_buffer_texture = SDL_CreateTexture(renderer, 
+				SDL_PIXELFORMAT_RGBA32, 
+				SDL_TEXTUREACCESS_STREAMING,
+				this->window_width,
+				this->window_height);
+}
+
+void Graphics::set_up(){
+	this->init();
+		
 }
 
 bool Graphics::is_running(){
@@ -73,13 +86,27 @@ void Graphics::update(){
 }
 
 void Graphics::render(){
-	SDL_SetRenderDrawColor(this->renderer, 75, 75, 75, 255);
-	SDL_RenderClear(this->renderer);
+	// SDL_SetRenderDrawColor(this->renderer, 75, 75, 75, 255);
+	// SDL_RenderClear(this->renderer);
+	
+	clear_color_buffer(0x22334455);
+	SDL_UpdateTexture(color_buffer_texture, NULL, color_buffer, this->window_width);
+	SDL_RenderCopy(this->renderer, this->color_buffer_texture, NULL, NULL);
 	SDL_RenderPresent(this->renderer);
 }
 
 void Graphics::destroy(){
+	delete this->color_buffer;
 	SDL_DestroyRenderer(this->renderer);
 	SDL_DestroyWindow(this->window);
 	SDL_Quit();
+}
+
+
+
+void Graphics::clear_color_buffer(uint32_t color){
+	int size = window_width * window_height;
+	for (int i= 0; i < size; i++){
+		color_buffer[i] = color;
+	}
 }
