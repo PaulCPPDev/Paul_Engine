@@ -11,8 +11,12 @@
 #include <iostream>
 
 
-void Graphics::init(){
 
+void Graphics::init(){
+	
+	// Initialize the display object
+	this->display = new Display();
+		
 	// Initialize SDL
 	if(SDL_Init(SDL_INIT_EVERYTHING) != 0){
 		// Log the error code
@@ -20,39 +24,42 @@ void Graphics::init(){
 		this->isRunning = false;
 	}
 	
-	// set the Window to full screen
+	// Get the Full screen resolution of the current display(0)
 	SDL_DisplayMode display_mode;
 	SDL_GetCurrentDisplayMode(0, &display_mode);
-	this->window_width = display_mode.w;
-	this->window_height = display_mode.h;
-	if(SDL_SetWindowFullscreen(this->window, SDL_WINDOW_FULLSCREEN) != 0){
-		// Log the error code
-		// std::cout << "Error making the window full screen" << std::endl; // This doesn't work
-	}
+	this->display->window_width = display_mode.w;
+	this->display->window_height = display_mode.h;
+
 	
-	window = SDL_CreateWindow(NULL, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, this->window_width, this->window_height, SDL_WINDOW_BORDERLESS );
-	if(window == NULL){
+	display->window = SDL_CreateWindow(NULL, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, this->display->window_width, this->display->window_height, SDL_WINDOW_BORDERLESS );
+	if(display->window == NULL){
 		// Log the error code
 		std::cout << "Eror Creating SDL Window" << std::endl;
 		this->isRunning = false;
 	}
 	
-	renderer = SDL_CreateRenderer(window, -1, 0);
-	if (renderer == NULL){
+	display->renderer = SDL_CreateRenderer(display->window, -1, 0);
+	if (display->renderer == NULL){
 		// Log the error code
 		std::cout << "Error Creating SDL Renderer" << std::endl;
 		this->isRunning = false;
 	}
 	
+	// Make the window true full screen 
+	if(SDL_SetWindowFullscreen(this->display->window, SDL_WINDOW_FULLSCREEN) != 0){
+		// Log the error code
+		// std::cout << "Error making the window full screen" << std::endl; // This doesn't work
+	}
+	
 	//color buffer
-	this->color_buffer = new uint32_t[this->window_width * this-> window_height];
+	this->display->color_buffer = new uint32_t[this->display->window_width * this->display->window_height];
 	
 	// Create a color buffer texture to access every single pixel on the screen
-	this->color_buffer_texture = SDL_CreateTexture(renderer, 
-				SDL_PIXELFORMAT_RGBA32, 
+	this->display->color_buffer_texture = SDL_CreateTexture(display->renderer, 
+				SDL_PIXELFORMAT_RGBA8888, 
 				SDL_TEXTUREACCESS_STREAMING,
-				this->window_width,
-				this->window_height);
+				this->display->window_width,
+				this->display->window_height);
 }
 
 void Graphics::set_up(){
@@ -83,30 +90,33 @@ void Graphics::process_input(){
 
 void Graphics::update(){
 	// TODO
+	
 }
 
 void Graphics::render(){
-	// SDL_SetRenderDrawColor(this->renderer, 75, 75, 75, 255);
-	// SDL_RenderClear(this->renderer);
+	SDL_SetRenderDrawColor(display->renderer, 255, 0, 0, 255);
+	SDL_RenderClear(display->renderer);
 	
-	clear_color_buffer(0x22334455);
-	SDL_UpdateTexture(color_buffer_texture, NULL, color_buffer, this->window_width);
-	SDL_RenderCopy(this->renderer, this->color_buffer_texture, NULL, NULL);
-	SDL_RenderPresent(this->renderer);
+	display->clear_color_buffer(0x141414d9);
+	//display->draw_filled_rect(200,200, 400, 200, 0xFF000000);
+	//display->draw_line(200,700, 800, 200, 0xFF000000);
+	//display->draw_unfilled_triangle(200,700, 500, 200, 800, 500, 0xFF000000);
+	display->draw_filled_triangle(200,700, 500, 200, 800, 500, 0xFF000000);
+	
+	//render the color buffer
+	SDL_UpdateTexture(display->color_buffer_texture, NULL, display->color_buffer, (this->display->window_width * sizeof(uint32_t)) );
+	SDL_RenderCopy(this->display->renderer, this->display->color_buffer_texture, NULL, NULL);
+	SDL_RenderPresent(this->display->renderer);
+	
+	
+	
 }
 
 void Graphics::destroy(){
-	delete this->color_buffer;
-	SDL_DestroyRenderer(this->renderer);
-	SDL_DestroyWindow(this->window);
+	delete this->display->color_buffer;
+	display->destroy();
+	delete this->display;
 	SDL_Quit();
 }
 
 
-
-void Graphics::clear_color_buffer(uint32_t color){
-	int size = window_width * window_height;
-	for (int i= 0; i < size; i++){
-		color_buffer[i] = color;
-	}
-}

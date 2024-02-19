@@ -3,13 +3,13 @@
 ################################################################################
 CC = g++
 LANG_STD = -std=c++17
-COMPILER_FLAGS = -Wall -Wfatal-errors
+COMPILER_FLAGS = -g -Wall -Wfatal-errors
 INCLUDE_PATH = -I"./libs/"
 SRC_FILES = ./Core/main.cpp \
 	    ./Core/*/*.cpp \
-	    ./Renderer/Graphics.cpp
+	    ./Renderer/*.cpp
 
-LINKER_FLAGS = -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -llua5.3 
+LINKER_FLAGS = -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lSDL2_gfx -llua5.3 
 OBJ_NAME = paulengine
 
 ################################################################################

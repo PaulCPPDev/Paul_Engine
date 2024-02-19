@@ -2,6 +2,7 @@
 #define GRAPHICS_H
 
 #include <SDL2/SDL.h>
+#include "Display.h"
 
 //////////////////////////////////////////////////////
 ///////// Provided Interface /////////////////////////
@@ -10,13 +11,8 @@
 class Graphics {
 	private:
 		bool isRunning = true;
-		int window_width = 800;
-		int window_height = 600;
-		
-		SDL_Window* window = NULL;
-		SDL_Renderer* renderer = NULL;
-		uint32_t* color_buffer = NULL;
-		SDL_Texture* color_buffer_texture = NULL;
+
+		Display* display = NULL;
 
 	public:
 		Graphics() = default;
@@ -29,8 +25,6 @@ class Graphics {
                 void update();
                 void render();
                 void destroy();
-                
-                void clear_color_buffer(uint32_t color);
 };
 
 #endif

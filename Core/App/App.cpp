@@ -9,6 +9,8 @@
 
 #include "App.h"
 
+#define FPS 60
+#define TARGET_FRAME_TIME (1000/FPS)
 
 void App::set_up(){
 	graphics.set_up();
@@ -25,10 +27,21 @@ void App::process_input(){
 
 
 void App::update(){
-	graphics.update();
+	//fix the time step
+	static int previous_frame_time;
+	int time_to_wait = TARGET_FRAME_TIME - (SDL_GetTicks() - previous_frame_time);
+	if(time_to_wait > 0 && time_to_wait < TARGET_FRAME_TIME)
+		SDL_Delay(time_to_wait);
+	int delta_time = (SDL_GetTicks()-previous_frame_time)/1000;
+	previous_frame_time = SDL_GetTicks();
+	
+	//update the physics
+	
 }
 
 void App::render(){
+	//update the graphics
+	//graphics.update()
 	graphics.render();
 }
 

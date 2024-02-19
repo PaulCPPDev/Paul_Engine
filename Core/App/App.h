@@ -2,6 +2,7 @@
 #define APP_H
 
 #include "../../Renderer/Graphics.h"
+#include <SDL2/SDL.h>
 
 class App {
 	private:
