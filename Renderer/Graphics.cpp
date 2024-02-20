@@ -10,6 +10,7 @@
 #include "Graphics.h"
 #include <iostream>
 
+#define FOV_SCALING_FACTOR 128
 
 
 void Graphics::init(){
@@ -64,6 +65,23 @@ void Graphics::init(){
 
 void Graphics::set_up(){
 	this->init();
+	
+	// initialize camera
+	Camera* camera = new Camera();
+	camera->position = glm::vec3(0,0, -5);
+	camera->direction = glm::vec3(0, 0, 1);
+	
+	// load cube mesh data
+	// load .obj files
+	
+	
+	// initialize cube values
+	Mesh* mesh = new Mesh();
+	mesh->load_cube_mesh_data();
+	meshes.push_back(*mesh);
+	
+	// new code
+	meshes[0].rotate  = glm::vec3(0,0,0);
 		
 }
 
@@ -89,19 +107,34 @@ void Graphics::process_input(){
 
 
 void Graphics::update(){
-	// TODO
+	triangles_to_render.clear();
+	// update the rotation of the mesh
+	meshes[0].rotate  += glm::vec3(0, 0.1, 0);
+	//loop all meshes
+	for(auto& mesh : meshes)
+		pipeline(mesh);
 	
 }
 
 void Graphics::render(){
 	SDL_SetRenderDrawColor(display->renderer, 255, 0, 0, 255);
 	SDL_RenderClear(display->renderer);
-	
 	display->clear_color_buffer(0x141414d9);
+	
+	
 	//display->draw_filled_rect(200,200, 400, 200, 0xFF000000);
 	//display->draw_line(200,700, 800, 200, 0xFF000000);
 	//display->draw_unfilled_triangle(200,700, 500, 200, 800, 500, 0xFF000000);
-	display->draw_filled_triangle(200,700, 500, 200, 800, 500, 0xFF000000);
+	//display->draw_filled_triangle(200,700, 500, 200, 800, 500, 0xFF000000);
+	
+	// loop all triangles to render
+	for (auto triangle : triangles_to_render){
+		// draw Triangle
+		display->draw_unfilled_triangle(triangle.vertices[0].coord.x, triangle.vertices[0].coord.y, 
+						triangle.vertices[1].coord.x, triangle.vertices[1].coord.y, 
+						triangle.vertices[2].coord.x, triangle.vertices[2].coord.y, 
+						0xFF000000);
+	}
 	
 	//render the color buffer
 	SDL_UpdateTexture(display->color_buffer_texture, NULL, display->color_buffer, (this->display->window_width * sizeof(uint32_t)) );
@@ -117,6 +150,66 @@ void Graphics::destroy(){
 	display->destroy();
 	delete this->display;
 	SDL_Quit();
+}
+
+
+
+
+// Graphics pipeline applied to every mesh
+void Graphics::pipeline(Mesh& mesh){
+	// Create world Matrix Scale Rotate Translate
+	// Create View/Camera Matrix
+	// Loop all triangles in Mesh
+	for(auto triangle: mesh.triangles){
+		// array to store the transformed triangle vertices
+		std::array<glm::vec3, 3> transformed_vertices;
+		// loop all 3 vertices in a triangle
+		for(int v = 0; v<3 ; v++){
+			glm::vec3 transformed_vertex = triangle.vertices[v].coord;
+			// apply the world Matrix
+				// Rotate
+				// Create a rotation matrix around the y-axis
+    				glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(mesh.rotate.y), glm::vec3(0.0f, 1.0f, 0.0f));
+				// Apply the rotation to the point
+    				glm::vec3 rotatedPoint = glm::vec3(rotationMatrix * glm::vec4(transformed_vertex, 1.0f));
+				//transformed_vertex += mesh.rotate;
+			// apply the view Matrix
+			  
+			// push to the transformed vertices
+			transformed_vertices[v] = rotatedPoint; //transformed_vertex;
+			}
+		
+		// Back face cull
+		
+		
+		
+		// Clip Polygons
+		// Loop all Clipped Triangles
+			// lop 3 vertices
+				//projectionMatrix
+		
+		
+		// create the triangle to be rendered
+		Triangle triangle_to_render;
+		for (int v = 0; v<3 ; v++){
+			triangle_to_render.vertices[v].index = triangle.vertices[v].index;
+			triangle_to_render.vertices[v].coord = transformed_vertices[v];
+			
+			// Perspective divide
+			
+			// Scale into the view (zoom into the objects)
+                	triangle_to_render.vertices[v].coord.x *= FOV_SCALING_FACTOR;
+			triangle_to_render.vertices[v].coord.y *= FOV_SCALING_FACTOR;
+			// Translate to middle of the screen
+			triangle_to_render.vertices[v].coord.x += (display->window_width / 2.0);
+			triangle_to_render.vertices[v].coord.y += (display->window_height / 2.0);
+		}
+		
+		
+		
+		// add to triangles to render;
+		triangles_to_render.push_back(triangle_to_render);
+	}
 }
 
 

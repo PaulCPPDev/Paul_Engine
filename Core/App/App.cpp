@@ -41,7 +41,7 @@ void App::update(){
 
 void App::render(){
 	//update the graphics
-	//graphics.update()
+	graphics.update();
 	graphics.render();
 }
 
