@@ -9,6 +9,9 @@
 
 #include "Mesh.h"
 #include <algorithm>
+#include <fstream> 
+#include <iostream>
+#include <sstream>
 #define N_CUBE_TRIANGLES 12
 #define N_CUBE_VERTEX_COORD 8
 
@@ -109,5 +112,47 @@ void Mesh::load_cube_mesh_data(void) {
     }
     
 }
+
+
+void Mesh::load_obj_file(const std::string& path){
+    std::ifstream file(path);
+    
+    if (!file.is_open()) {
+        std::cerr << "Error: Unable to open file " << path << std::endl;
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        std::istringstream iss(line);
+        std::string token;
+        iss >> token;
+
+        if (token == "v") {
+            glm::vec3 vertex;
+            iss >> vertex.x >> vertex.y >> vertex.z;
+            vertices.push_back(vertex);
+        } else if (token == "f") {
+            	// Create triangle
+	    	Triangle cube_triangle;
+	    	//get vertex indices
+	    	for(int j = 0; j < 3 ; j++){
+	    		char separator;
+	    		float garbage;
+	    		iss >> cube_triangle.vertices[j].index >> separator
+	    		    >> garbage >> separator
+	    		    >> garbage;
+	    		// we subtract one bcz the obj file starts at 1
+	    		cube_triangle.vertices[j].coord = this->vertices[ cube_triangle.vertices[j].index -1];
+	    	}
+	    	// push the triangle to the vector of triangles
+	    	triangles.emplace_back(cube_triangle);
+		}
+        
+        else {}
+    }
+
+    file.close();
+}
+
 
 

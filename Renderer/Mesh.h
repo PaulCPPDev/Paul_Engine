@@ -20,9 +20,11 @@ class Mesh {
 		glm::vec3 rotate;
 		glm::vec3 translate;
 		
+		
 		Mesh() = default;
 		void load_cube_mesh_data(void);
-		void load_obj_file(std::string& path);
+		void load_obj_file(const std::string& path);
+		
 
 };
 

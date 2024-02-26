@@ -9,6 +9,8 @@
 
 #include "Graphics.h"
 #include <iostream>
+#include <fstream>
+#include <sstream>
 
 #define FOV_SCALING_FACTOR 128
 
@@ -73,11 +75,10 @@ void Graphics::set_up(){
 	
 	// load cube mesh data
 	// load .obj files
-	
-	
-	// initialize cube values
 	Mesh* mesh = new Mesh();
-	mesh->load_cube_mesh_data();
+	
+	//mesh->load_cube_mesh_data();
+	mesh->load_obj_file("f22.obj");
 	meshes.push_back(*mesh);
 	
 	// new code
