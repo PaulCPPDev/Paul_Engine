@@ -69,7 +69,8 @@ void Graphics::set_up(){
 	this->init();
 	
 	// initialize camera
-	Camera* camera = new Camera();
+	// Camera* camera = new Camera();
+	camera = new Camera();
 	camera->position = glm::vec3(0,0, -5);
 	camera->direction = glm::vec3(0, 0, 1);
 	
@@ -77,8 +78,8 @@ void Graphics::set_up(){
 	// load .obj files
 	Mesh* mesh = new Mesh();
 	
-	//mesh->load_cube_mesh_data();
-	mesh->load_obj_file("f22.obj");
+	mesh->load_cube_mesh_data();
+	//mesh->load_obj_file("cube.obj");
 	meshes.push_back(*mesh);
 	
 	// new code
@@ -110,7 +111,7 @@ void Graphics::process_input(){
 void Graphics::update(){
 	triangles_to_render.clear();
 	// update the rotation of the mesh
-	meshes[0].rotate  += glm::vec3(0, 0.1, 0);
+	meshes[0].rotate  += glm::vec3(0, 0.4, 0);
 	//loop all meshes
 	for(auto& mesh : meshes)
 		pipeline(mesh);
@@ -130,10 +131,15 @@ void Graphics::render(){
 	
 	// loop all triangles to render
 	for (auto triangle : triangles_to_render){
+		// draw Filled Triangle
+		display->draw_filled_triangle(triangle.vertices[0].x, triangle.vertices[0].y, 
+						triangle.vertices[1].x, triangle.vertices[1].y, 
+						triangle.vertices[2].x, triangle.vertices[2].y, 
+						0xFFFF0000);
 		// draw Triangle
-		display->draw_unfilled_triangle(triangle.vertices[0].coord.x, triangle.vertices[0].coord.y, 
-						triangle.vertices[1].coord.x, triangle.vertices[1].coord.y, 
-						triangle.vertices[2].coord.x, triangle.vertices[2].coord.y, 
+		display->draw_unfilled_triangle(triangle.vertices[0].x, triangle.vertices[0].y, 
+						triangle.vertices[1].x, triangle.vertices[1].y, 
+						triangle.vertices[2].x, triangle.vertices[2].y, 
 						0xFF000000);
 	}
 	
@@ -147,6 +153,7 @@ void Graphics::render(){
 }
 
 void Graphics::destroy(){
+	delete this->camera;
 	delete this->display->color_buffer;
 	display->destroy();
 	delete this->display;
@@ -166,7 +173,7 @@ void Graphics::pipeline(Mesh& mesh){
 		std::array<glm::vec3, 3> transformed_vertices;
 		// loop all 3 vertices in a triangle
 		for(int v = 0; v<3 ; v++){
-			glm::vec3 transformed_vertex = triangle.vertices[v].coord;
+			glm::vec3 transformed_vertex = triangle.vertices[v];
 			// apply the world Matrix
 				// Rotate
 				// Create a rotation matrix around the y-axis
@@ -181,7 +188,25 @@ void Graphics::pipeline(Mesh& mesh){
 			}
 		
 		// Back face cull
+        	/*  1A   */
+        	/*  / \  */
+        	/*0C---2B */
+        	
+        	// Find the vectors (B-A) & (C-A)
+        	glm::vec3 vec_ab = glm::normalize(transformed_vertices[2] - transformed_vertices[1]);
+                glm::vec3 vec_ac = glm::normalize(transformed_vertices[0] - transformed_vertices[1]);
+                
+                // Normal vector N = (B -A) X (C -A)
+                glm::vec3 normal = glm::normalize(glm::cross(vec_ab, vec_ac));
+                
+                // Camera ray vector
+                glm::vec3 camera_ray = - glm::normalize((transformed_vertices[1] - camera->position)) ;
 		
+		// find the dot product
+		float dot_face_normal = glm::dot(normal, camera_ray);
+		
+		if(dot_face_normal < 0)
+			continue;
 		
 		
 		// Clip Polygons
@@ -193,17 +218,17 @@ void Graphics::pipeline(Mesh& mesh){
 		// create the triangle to be rendered
 		Triangle triangle_to_render;
 		for (int v = 0; v<3 ; v++){
-			triangle_to_render.vertices[v].index = triangle.vertices[v].index;
-			triangle_to_render.vertices[v].coord = transformed_vertices[v];
+			//triangle_to_render.vertices[v].index = triangle.vertices[v].index;
+			triangle_to_render.vertices[v] = transformed_vertices[v];
 			
 			// Perspective divide
 			
 			// Scale into the view (zoom into the objects)
-                	triangle_to_render.vertices[v].coord.x *= FOV_SCALING_FACTOR;
-			triangle_to_render.vertices[v].coord.y *= FOV_SCALING_FACTOR;
+                	triangle_to_render.vertices[v].x *= FOV_SCALING_FACTOR;
+			triangle_to_render.vertices[v].y *= FOV_SCALING_FACTOR;
 			// Translate to middle of the screen
-			triangle_to_render.vertices[v].coord.x += (display->window_width / 2.0);
-			triangle_to_render.vertices[v].coord.y += (display->window_height / 2.0);
+			triangle_to_render.vertices[v].x += (display->window_width / 2.0);
+			triangle_to_render.vertices[v].y += (display->window_height / 2.0);
 		}
 		
 		

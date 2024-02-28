@@ -5,7 +5,7 @@
 #include <string>
 #include <glm/glm.hpp>
 #include "Triangle.h"
-// #include "Face.h"
+#include "Face.h"
 
 //////////////////////////////////////////////////////
 ///////// Mesh /////////////////////////
@@ -16,6 +16,7 @@ class Mesh {
 	public:
 		std::vector<glm::vec3> vertices;
 		std::vector<Triangle> triangles;
+		std::vector<Face> faces;
 		glm::vec3 scale;
 		glm::vec3 rotate;
 		glm::vec3 translate;

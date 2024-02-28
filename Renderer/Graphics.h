@@ -18,6 +18,7 @@ class Graphics {
 
 		Display* display = NULL;
 		std::vector<Mesh> meshes;
+		Camera* camera;
 		
 		// refactor
 		std::vector<Triangle> triangles_to_render;
@@ -25,7 +26,7 @@ class Graphics {
 		
 
 	public:
-		Graphics() = default;
+		Graphics()= default;
 		~Graphics() = default;
 		
 		void init();
@@ -36,6 +37,8 @@ class Graphics {
                 void render();
                 void destroy();
                 void pipeline(Mesh& mesh);
+	
+		
 };
 
 #endif

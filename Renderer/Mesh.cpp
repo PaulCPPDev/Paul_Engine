@@ -101,11 +101,18 @@ void Mesh::load_cube_mesh_data(void) {
     for (int i = 0; i < N_CUBE_TRIANGLES; i++) {
     	// Create triangle
     	Triangle cube_triangle;
+    	Face cube_face;
     	//get vertex indices
     	for(int j = 0; j < 3 ; j++){
-    		cube_triangle.vertices[j].index = cube_triangles_indices[i][j];
+    		// store face indices
+    		cube_face.index[j] = cube_triangles_indices[i][j];
+    		//cube_triangle.vertices[j].index = cube_triangles_indices[i][j];
+    		
+    		// store the vertex coordinates in the triangle
+    		cube_triangle.vertices[j] = this->vertices[cube_face.index[j] -1 ];
+    		
     		// we subtract one bcz the obj file starts at 1
-    		cube_triangle.vertices[j].coord = this->vertices[ cube_triangle.vertices[j].index -1];
+    		//cube_triangle.vertices[j].coord = this->vertices[ cube_triangle.vertices[j].index -1];
     	}
     	// push the triangle to the vector of triangles
     	this->triangles.push_back(cube_triangle);
@@ -134,15 +141,16 @@ void Mesh::load_obj_file(const std::string& path){
         } else if (token == "f") {
             	// Create triangle
 	    	Triangle cube_triangle;
+	    	Face cube_face;
 	    	//get vertex indices
 	    	for(int j = 0; j < 3 ; j++){
 	    		char separator;
 	    		float garbage;
-	    		iss >> cube_triangle.vertices[j].index >> separator
+	    		iss >> cube_face.index[j] >> separator
 	    		    >> garbage >> separator
 	    		    >> garbage;
 	    		// we subtract one bcz the obj file starts at 1
-	    		cube_triangle.vertices[j].coord = this->vertices[ cube_triangle.vertices[j].index -1];
+	    		cube_triangle.vertices[j] = this->vertices[ cube_face.index[j] -1];
 	    	}
 	    	// push the triangle to the vector of triangles
 	    	triangles.emplace_back(cube_triangle);
