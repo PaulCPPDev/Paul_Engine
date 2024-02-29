@@ -70,26 +70,42 @@ void Graphics::set_up(){
 	this->init();
 	
 	// Projection Matrix information
-	
+	// Initialize the perspective projection matrix
+    	float aspect_y = (float)display->window_height / (float)display->window_width;
+    	float aspect_x = (float)display->window_width / (float)display->window_height;
+    	float fov_y = 3.141592 / 3.0; // the same as 180/3, or 60deg
+    	float fov_x = atan(tan(fov_y / 2) * aspect_x) * 2;
+    	float znear = 1.0;
+    	float zfar = 20.0;
+    	//proj_matrix = this->projection_matrix(fov_y, aspect_y, znear, zfar);
+    	proj_matrix = glm::perspective(fov_y, aspect_x, znear, zfar);
+    	
+
+    	// Initialize frustum planes with a point and a normal
+    	// init_frustum_planes(fov_x, fov_y, znear, zfar);
+    	
+    	
+    	// Global ilumination
+    	light = new Light(glm::vec3(0,0,1));
+    	
 	// initialize camera
-	// Camera* camera = new Camera();
 	camera = new Camera();
-	//camera->position = glm::vec3(0,0, 0);
-	//camera->direction = glm::vec3(0, 0, 1);
-	//camera->orientation = glm::vec3(0,0, 0);
+	
 	
 	// load cube mesh data
 	// load .obj files
 	Mesh* mesh = new Mesh();
 	
 	//mesh->load_cube_mesh_data();
-	mesh->load_obj_file("./Dev/cube.obj");
+	mesh->load_obj_file("./Dev/crab.obj");
 	meshes.push_back(*mesh);
 	
 	// new code
 	meshes[0].scale = glm::vec3(1,1,1);
 	meshes[0].rotate  = glm::vec3(0,0,0);
 	meshes[0].translate = glm::vec3(0,0,5);
+	
+	
 		
 }
 
@@ -112,19 +128,19 @@ void Graphics::process_input(){
 				
 				// BEGIN CAMERA MOVEMENT	
 				if (event.key.keysym.sym == SDLK_w) {
-				    this->camera->orientation.x += (0.5);
-				    break;
-				}
-				if (event.key.keysym.sym == SDLK_s) {
 				    this->camera->orientation.x -= (0.5);
 				    break;
 				}
+				if (event.key.keysym.sym == SDLK_s) {
+				    this->camera->orientation.x += (0.5);
+				    break;
+				}
 				if (event.key.keysym.sym == SDLK_d) {
-				    this->camera->orientation.y += (0.5);
+				    this->camera->orientation.y -= (0.5);
 				    break;
 				}
 				if (event.key.keysym.sym == SDLK_a) {
-				    this->camera->orientation.y -= (0.5);
+				    this->camera->orientation.y += (0.5);
 				    break;
 				}
 				
@@ -164,15 +180,15 @@ void Graphics::render(){
 	// loop all triangles to render
 	for (auto triangle : triangles_to_render){
 		// draw Filled Triangle
-		display->draw_unfilled_triangle(triangle.vertices[0].x, triangle.vertices[0].y, 
+		display->draw_filled_triangle(triangle.vertices[0].x, triangle.vertices[0].y, 
 						triangle.vertices[1].x, triangle.vertices[1].y, 
-						triangle.vertices[2].x, triangle.vertices[2].y, 
-						0xd99d62);
+						triangle.vertices[2].x, triangle.vertices[2].y,
+						light->apply_light_intensity(0xFFFFFFFF, triangle.color));
 		// draw Triangle
 		display->draw_unfilled_triangle(triangle.vertices[0].x, triangle.vertices[0].y, 
 						triangle.vertices[1].x, triangle.vertices[1].y, 
 						triangle.vertices[2].x, triangle.vertices[2].y, 
-						0xFF000000);
+						0x79949ced);
 	}
 	
 	//render the color buffer
@@ -241,7 +257,7 @@ void Graphics::pipeline(Mesh& mesh){
 			transformed_vertices[v] = viewed_point; //transformed_vertex;
 			}
 		
-		// Back face cull
+		// TODO Back face cull
         	/*  1A   */
         	/*  / \  */
         	/*0C---2B */
@@ -265,6 +281,17 @@ void Graphics::pipeline(Mesh& mesh){
 			continue;
 		
 		
+		// TODO FLAT SHADING DOES NOT WORK
+		 
+		// Calculate the shade intensity based on how aliged is the normal with the flipped light direction ray
+            	float light_intensity_factor = -glm::dot(normal, light->direction);
+            	
+
+            	// Calculate the triangle color based on the light angle
+            	triangle.color = light_intensity_factor;// light->apply_light_intensity(0xFFFFFFFF, 1);
+            	
+		
+		
 		// Clip Polygons
 		// Loop all Clipped Triangles
 			// lop 3 vertices
@@ -274,21 +301,25 @@ void Graphics::pipeline(Mesh& mesh){
 		// create the triangle to be rendered
 		Triangle triangle_to_render;
 		for (int v = 0; v<3 ; v++){
+		
+			// Get the color
+			triangle_to_render.color = triangle.color;
 			//Projection Matrix
-			triangle_to_render.vertices[v] = transformed_vertices[v];
+			triangle_to_render.vertices[v] = glm::vec3(proj_matrix * glm::vec4(transformed_vertices[v], 1.0f));
+			// triangle_to_render.vertices[v] = transformed_vertices[v];
 			
 			// Perspective divide
 			if (triangle_to_render.vertices[v].z != 0){
-				triangle_to_render.vertices[v].x /= triangle_to_render.vertices[v].z;  // TODO have to remove camera position
-				triangle_to_render.vertices[v].y /= triangle_to_render.vertices[v].z;  // have to remove camera postion
+				triangle_to_render.vertices[v].x /= triangle_to_render.vertices[v].z;  
+				triangle_to_render.vertices[v].y /= triangle_to_render.vertices[v].z;  
 			}
 			
 			// Flip the coordinates vertically
-			triangle_to_render.vertices[v].y *= -1;
+			//triangle_to_render.vertices[v].y *= -1;
 			
 			// Scale into the view (zoom into the objects)
-                	triangle_to_render.vertices[v].x *= FOV_SCALING_FACTOR;
-			triangle_to_render.vertices[v].y *= FOV_SCALING_FACTOR;
+                	triangle_to_render.vertices[v].x *= (display->window_width / 2.0);
+			triangle_to_render.vertices[v].y *= (display->window_height / 2.0);
 			// Translate to middle of the screen
 			triangle_to_render.vertices[v].x += (display->window_width / 2.0);
 			triangle_to_render.vertices[v].y += (display->window_height / 2.0);
@@ -300,5 +331,23 @@ void Graphics::pipeline(Mesh& mesh){
 		triangles_to_render.push_back(triangle_to_render);
 	}
 }
+
+
+
+glm::mat4  Graphics::projection_matrix(float fov, float aspect, float znear, float zfar){
+	// | (h/w)*1/tan(fov/2)             0              0                 0 |
+    	// |                  0  1/tan(fov/2)              0                 0 |
+   	// |                  0             0     zf/(zf-zn)  (-zf*zn)/(zf-zn) |
+    	// |                  0             0              1                 0 |
+    	glm::mat4 projection_matrix(0.0f);
+   	projection_matrix[0][0] = aspect * (1 / tan(fov / 2));
+    	projection_matrix[1][1] = 1 / tan(fov / 2);
+    	projection_matrix[2][2] = zfar / (zfar - znear);
+    	projection_matrix[2][3] = (-zfar * znear) / (zfar - znear);
+    	projection_matrix[3][2] = 1.0;
+    return projection_matrix;
+}
+
+
 
 

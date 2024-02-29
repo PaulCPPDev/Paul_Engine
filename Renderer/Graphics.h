@@ -5,6 +5,7 @@
 #include <SDL2/SDL.h>
 #include "Display.h"
 #include "Camera.h"
+#include "Light.h"
 #include "Mesh.h"
 #include "Triangle.h"
 
@@ -19,7 +20,9 @@ class Graphics {
 		Display* display = NULL;
 		std::vector<Mesh> meshes;
 		Camera* camera;
+		Light* light;
 		
+		glm::mat4 proj_matrix;		
 		// refactor
 		std::vector<Triangle> triangles_to_render;
 		int triangles_to_render_count = 0;
@@ -37,6 +40,8 @@ class Graphics {
                 void render();
                 void destroy();
                 void pipeline(Mesh& mesh);
+                glm::mat4 projection_matrix(float fov, float aspect, float znear, float zfar);
+                
 	
 		
 };

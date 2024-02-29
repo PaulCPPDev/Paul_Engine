@@ -25,6 +25,7 @@ class Triangle {
 	public:
 		// vetices
 		std::array<glm::vec3, 3> vertices;
+		double color;
 		// texture
 		//std::array<glm::vec2,3> texture_coords;
 		

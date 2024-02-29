@@ -4,6 +4,8 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL2_gfxPrimitives.h>
 #include <cstdlib>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 //////////////////////////////////////////////////////
 ///////// Provided Interface /////////////////////////
@@ -37,6 +39,8 @@ class Display {
                 
                 void draw_unfilled_triangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color);
                 void draw_filled_triangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color);
+                
+               
                 
 	private:
 		void sortVerticesByY(int& x0, int& y0, int& x1, int& y1, int& x2, int& y2);  
