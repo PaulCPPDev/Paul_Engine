@@ -78,8 +78,8 @@ void Graphics::set_up(){
 	// load .obj files
 	Mesh* mesh = new Mesh();
 	
-	mesh->load_cube_mesh_data();
-	//mesh->load_obj_file("cube.obj");
+	//mesh->load_cube_mesh_data();
+	mesh->load_obj_file("./Dev/drone.obj");
 	meshes.push_back(*mesh);
 	
 	// new code
@@ -135,7 +135,7 @@ void Graphics::render(){
 		display->draw_filled_triangle(triangle.vertices[0].x, triangle.vertices[0].y, 
 						triangle.vertices[1].x, triangle.vertices[1].y, 
 						triangle.vertices[2].x, triangle.vertices[2].y, 
-						0xFFFF0000);
+						0xd99d62);
 		// draw Triangle
 		display->draw_unfilled_triangle(triangle.vertices[0].x, triangle.vertices[0].y, 
 						triangle.vertices[1].x, triangle.vertices[1].y, 
@@ -222,6 +222,9 @@ void Graphics::pipeline(Mesh& mesh){
 			triangle_to_render.vertices[v] = transformed_vertices[v];
 			
 			// Perspective divide
+			
+			// Flip the coordinates vertically
+			triangle_to_render.vertices[v].y *= -1;
 			
 			// Scale into the view (zoom into the objects)
                 	triangle_to_render.vertices[v].x *= FOV_SCALING_FACTOR;
