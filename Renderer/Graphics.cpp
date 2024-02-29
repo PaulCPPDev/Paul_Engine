@@ -8,11 +8,13 @@
  */
 
 #include "Graphics.h"
+#include <glm/gtc/matrix_transform.hpp>
+//#include "Pipeline.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
 
-#define FOV_SCALING_FACTOR 128
+#define FOV_SCALING_FACTOR 512
 
 
 void Graphics::init(){
@@ -68,10 +70,12 @@ void Graphics::init(){
 void Graphics::set_up(){
 	this->init();
 	
+	// Projection Matrix information
+	
 	// initialize camera
 	// Camera* camera = new Camera();
 	camera = new Camera();
-	camera->position = glm::vec3(0,0, -5);
+	camera->position = glm::vec3(0,0, 0);
 	camera->direction = glm::vec3(0, 0, 1);
 	
 	// load cube mesh data
@@ -79,11 +83,13 @@ void Graphics::set_up(){
 	Mesh* mesh = new Mesh();
 	
 	//mesh->load_cube_mesh_data();
-	mesh->load_obj_file("./Dev/drone.obj");
+	mesh->load_obj_file("./Dev/cube.obj");
 	meshes.push_back(*mesh);
 	
 	// new code
+	meshes[0].scale = glm::vec3(1,1,1);
 	meshes[0].rotate  = glm::vec3(0,0,0);
+	meshes[0].translate = glm::vec3(0,0,5);
 		
 }
 
@@ -111,7 +117,7 @@ void Graphics::process_input(){
 void Graphics::update(){
 	triangles_to_render.clear();
 	// update the rotation of the mesh
-	meshes[0].rotate  += glm::vec3(0, 0.4, 0);
+	meshes[0].rotate  += glm::vec3(0.2, 0.2, 0);
 	//loop all meshes
 	for(auto& mesh : meshes)
 		pipeline(mesh);
@@ -123,16 +129,10 @@ void Graphics::render(){
 	SDL_RenderClear(display->renderer);
 	display->clear_color_buffer(0x141414d9);
 	
-	
-	//display->draw_filled_rect(200,200, 400, 200, 0xFF000000);
-	//display->draw_line(200,700, 800, 200, 0xFF000000);
-	//display->draw_unfilled_triangle(200,700, 500, 200, 800, 500, 0xFF000000);
-	//display->draw_filled_triangle(200,700, 500, 200, 800, 500, 0xFF000000);
-	
 	// loop all triangles to render
 	for (auto triangle : triangles_to_render){
 		// draw Filled Triangle
-		display->draw_filled_triangle(triangle.vertices[0].x, triangle.vertices[0].y, 
+		display->draw_unfilled_triangle(triangle.vertices[0].x, triangle.vertices[0].y, 
 						triangle.vertices[1].x, triangle.vertices[1].y, 
 						triangle.vertices[2].x, triangle.vertices[2].y, 
 						0xd99d62);
@@ -166,25 +166,48 @@ void Graphics::destroy(){
 // Graphics pipeline applied to every mesh
 void Graphics::pipeline(Mesh& mesh){
 	// Create world Matrix Scale Rotate Translate
-	// Create View/Camera Matrix
+		// scaling matrix
+		glm::mat4 scaling_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(mesh.scale.x, mesh.scale.y, mesh.scale.z) );
+		
+		// Rotation matrix
+		// X - axis Rotation
+		glm::mat4 rotation_x = glm::rotate(glm::mat4(1.0f), glm::radians(mesh.rotate.x), glm::vec3(1.0f, 0.0f, 0.0f));
+		// y-axis Rotation
+    		glm::mat4 rotation_y = glm::rotate(glm::mat4(1.0f), glm::radians(mesh.rotate.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    		// z-axis Rotation 
+    		glm::mat4 rotation_z = glm::rotate(glm::mat4(1.0f), glm::radians(mesh.rotate.z), glm::vec3(0.0f, 0.0f, 1.0f));	
+    		// Make rotation Matrix
+    		glm::mat4 rotation_matrix = rotation_z * rotation_y * rotation_x;
+    		
+    		// translation matrix
+    		glm::mat4 translation_matrix = glm::translate(glm::mat4(1.0f), glm::vec3(mesh.translate.x, mesh.translate.y, mesh.translate.z) );
+    	// World Matrix
+    	glm::mat4 world_matrix = translation_matrix * rotation_matrix * scaling_matrix;
+    			
+	// Create View/Camera Matrix (look at camera model)
+	// Create the target 
+	camera->position.x += 0.02;
+	glm::vec3 target(0,0,10);
+	glm::vec3 up_direction(0,1,0);
+	// Make the camrera look at the target
+	glm::mat4 view_matrix = camera->look_at(camera->position,target, up_direction);
+	
 	// Loop all triangles in Mesh
 	for(auto triangle: mesh.triangles){
 		// array to store the transformed triangle vertices
 		std::array<glm::vec3, 3> transformed_vertices;
 		// loop all 3 vertices in a triangle
 		for(int v = 0; v<3 ; v++){
+		
 			glm::vec3 transformed_vertex = triangle.vertices[v];
 			// apply the world Matrix
-				// Rotate
-				// Create a rotation matrix around the y-axis
-    				glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(mesh.rotate.y), glm::vec3(0.0f, 1.0f, 0.0f));
-				// Apply the rotation to the point
-    				glm::vec3 rotatedPoint = glm::vec3(rotationMatrix * glm::vec4(transformed_vertex, 1.0f));
-				//transformed_vertex += mesh.rotate;
-			// apply the view Matrix
+    			glm::vec3 world_point = glm::vec3(world_matrix * glm::vec4(transformed_vertex, 1.0f));
+				
+			// apply the view/camera Matrix
+			glm::vec3 viewed_point = glm::vec3(view_matrix * glm::vec4(world_point, 1.0f));
 			  
 			// push to the transformed vertices
-			transformed_vertices[v] = rotatedPoint; //transformed_vertex;
+			transformed_vertices[v] = viewed_point; //transformed_vertex;
 			}
 		
 		// Back face cull
@@ -199,8 +222,10 @@ void Graphics::pipeline(Mesh& mesh){
                 // Normal vector N = (B -A) X (C -A)
                 glm::vec3 normal = glm::normalize(glm::cross(vec_ab, vec_ac));
                 
+                // define the oringin of my space
+                glm::vec3 origin(0,0,0);
                 // Camera ray vector
-                glm::vec3 camera_ray = - glm::normalize((transformed_vertices[1] - camera->position)) ;
+                glm::vec3 camera_ray = - glm::normalize((transformed_vertices[1] - origin)) ;
 		
 		// find the dot product
 		float dot_face_normal = glm::dot(normal, camera_ray);
@@ -218,10 +243,14 @@ void Graphics::pipeline(Mesh& mesh){
 		// create the triangle to be rendered
 		Triangle triangle_to_render;
 		for (int v = 0; v<3 ; v++){
-			//triangle_to_render.vertices[v].index = triangle.vertices[v].index;
+			//Projection Matrix
 			triangle_to_render.vertices[v] = transformed_vertices[v];
 			
 			// Perspective divide
+			if (triangle_to_render.vertices[v].z != 0){
+				triangle_to_render.vertices[v].x /= triangle_to_render.vertices[v].z;  // TODO have to remove camera position
+				triangle_to_render.vertices[v].y /= triangle_to_render.vertices[v].z;  // have to remove camera postion
+			}
 			
 			// Flip the coordinates vertically
 			triangle_to_render.vertices[v].y *= -1;

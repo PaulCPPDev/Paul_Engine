@@ -17,7 +17,7 @@ class Camera {
 		glm::vec3 view;
 		glm::vec3 direction;
 		
-		void look_at(glm::vec3 target, glm::vec3 up);
+		glm::mat4 look_at(glm::vec3 eye, glm::vec3 target, glm::vec3 up);
 
 };
 
