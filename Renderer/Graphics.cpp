@@ -9,7 +9,6 @@
 
 #include "Graphics.h"
 #include <glm/gtc/matrix_transform.hpp>
-//#include "Pipeline.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -75,8 +74,9 @@ void Graphics::set_up(){
 	// initialize camera
 	// Camera* camera = new Camera();
 	camera = new Camera();
-	camera->position = glm::vec3(0,0, 0);
-	camera->direction = glm::vec3(0, 0, 1);
+	//camera->position = glm::vec3(0,0, 0);
+	//camera->direction = glm::vec3(0, 0, 1);
+	//camera->orientation = glm::vec3(0,0, 0);
 	
 	// load cube mesh data
 	// load .obj files
@@ -108,6 +108,38 @@ void Graphics::process_input(){
 			case SDL_KEYDOWN:
 				if(event.key.keysym.sym == SDLK_ESCAPE)
 					this->isRunning = false;
+				
+				
+				// BEGIN CAMERA MOVEMENT	
+				if (event.key.keysym.sym == SDLK_w) {
+				    this->camera->orientation.x += (0.5);
+				    break;
+				}
+				if (event.key.keysym.sym == SDLK_s) {
+				    this->camera->orientation.x -= (0.5);
+				    break;
+				}
+				if (event.key.keysym.sym == SDLK_d) {
+				    this->camera->orientation.y += (0.5);
+				    break;
+				}
+				if (event.key.keysym.sym == SDLK_a) {
+				    this->camera->orientation.y -= (0.5);
+				    break;
+				}
+				
+				if (event.key.keysym.sym == SDLK_UP) {
+					this->camera->velocity = (this->camera->direction * glm::vec3(0.5,0.5,0.5) );
+					this->camera->position += this->camera->velocity;
+				   	break;
+				}
+				if (event.key.keysym.sym == SDLK_DOWN) {
+					this->camera->velocity = (this->camera->direction * glm::vec3(0.5,0.5,0.5) );
+					this->camera->position -= this->camera->velocity;
+				   	break;
+				}
+				// END CAMERA MOVEMENT
+                
 				break;
 		}
 	}
@@ -185,9 +217,8 @@ void Graphics::pipeline(Mesh& mesh){
     	glm::mat4 world_matrix = translation_matrix * rotation_matrix * scaling_matrix;
     			
 	// Create View/Camera Matrix (look at camera model)
-	// Create the target 
-	camera->position.x += 0.02;
-	glm::vec3 target(0,0,10);
+	// Create an FPS based Target (Target changes according to the FPS Movement)
+	glm::vec3 target = camera->get_FPS_target(); //mesh.translate;
 	glm::vec3 up_direction(0,1,0);
 	// Make the camrera look at the target
 	glm::mat4 view_matrix = camera->look_at(camera->position,target, up_direction);
