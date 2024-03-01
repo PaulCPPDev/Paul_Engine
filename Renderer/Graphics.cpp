@@ -64,6 +64,9 @@ void Graphics::init(){
 				SDL_TEXTUREACCESS_STREAMING,
 				this->display->window_width,
 				this->display->window_height);
+				
+	// z buffer
+	this->display->z_buffer = new float[this->display->window_width * this->display->window_height];
 }
 
 void Graphics::set_up(){
@@ -82,7 +85,7 @@ void Graphics::set_up(){
     	
 
     	// Initialize frustum planes with a point and a normal
-    	// init_frustum_planes(fov_x, fov_y, znear, zfar);
+    	Clip::init_frustum_planes(fov_x, fov_y, znear, zfar);
     	
     	
     	// Global ilumination
@@ -97,13 +100,41 @@ void Graphics::set_up(){
 	Mesh* mesh = new Mesh();
 	
 	//mesh->load_cube_mesh_data();
-	mesh->load_obj_file("./Dev/crab.obj");
+	mesh->load_obj_file("./Dev/cube.obj");
 	meshes.push_back(*mesh);
 	
 	// new code
 	meshes[0].scale = glm::vec3(1,1,1);
 	meshes[0].rotate  = glm::vec3(0,0,0);
 	meshes[0].translate = glm::vec3(0,0,5);
+	
+		
+	// load cube mesh data
+	// load .obj files
+	Mesh* mesh1 = new Mesh();
+	
+	//mesh->load_cube_mesh_data();
+	mesh1->load_obj_file("./Dev/crab.obj");
+	meshes.push_back(*mesh1);
+	
+	// new code
+	meshes[1].scale = glm::vec3(1,1,1);
+	meshes[1].rotate  = glm::vec3(0,0,0);
+	meshes[1].translate = glm::vec3(0,0,-10);
+	
+		
+	// load cube mesh data
+	// load .obj files
+	Mesh* mesh2 = new Mesh();
+	
+	//mesh->load_cube_mesh_data();
+	mesh2->load_obj_file("./Dev/sphere.obj");
+	meshes.push_back(*mesh2);
+	
+	// new code
+	meshes[2].scale = glm::vec3(1,1,1);
+	meshes[2].rotate  = glm::vec3(0,0,0);
+	meshes[2].translate = glm::vec3(-10,0,-5);
 	
 	
 		
@@ -166,6 +197,7 @@ void Graphics::update(){
 	triangles_to_render.clear();
 	// update the rotation of the mesh
 	meshes[0].rotate  += glm::vec3(0.2, 0.2, 0);
+	meshes[1].rotate  += glm::vec3(0.2, 0.2, 0);
 	//loop all meshes
 	for(auto& mesh : meshes)
 		pipeline(mesh);
@@ -176,13 +208,14 @@ void Graphics::render(){
 	SDL_SetRenderDrawColor(display->renderer, 255, 0, 0, 255);
 	SDL_RenderClear(display->renderer);
 	display->clear_color_buffer(0x141414d9);
+	display->clear_z_buffer();
 	
 	// loop all triangles to render
 	for (auto triangle : triangles_to_render){
 		// draw Filled Triangle
-		display->draw_filled_triangle(triangle.vertices[0].x, triangle.vertices[0].y, 
-						triangle.vertices[1].x, triangle.vertices[1].y, 
-						triangle.vertices[2].x, triangle.vertices[2].y,
+		display->draw_filled_triangle(triangle.vertices[0].x, triangle.vertices[0].y, triangle.vertices[0].z, 
+						triangle.vertices[1].x, triangle.vertices[1].y, triangle.vertices[1].z, 
+						triangle.vertices[2].x, triangle.vertices[2].y, triangle.vertices[2].z, 
 						light->apply_light_intensity(0xFFFFFFFF, triangle.color));
 		// draw Triangle
 		display->draw_unfilled_triangle(triangle.vertices[0].x, triangle.vertices[0].y, 
@@ -281,54 +314,75 @@ void Graphics::pipeline(Mesh& mesh){
 			continue;
 		
 		
-		// TODO FLAT SHADING DOES NOT WORK
-		 
-		// Calculate the shade intensity based on how aliged is the normal with the flipped light direction ray
-            	float light_intensity_factor = -glm::dot(normal, light->direction);
-            	
+		// TODO CLIPPING      
+        	// Create a polygon from the original transformed triangle to be clipped
+        	polygon_t polygon = Clip::polygon_from_triangle(
+            		transformed_vertices[0],
+            		transformed_vertices[1],
+            		transformed_vertices[2]
+        		);
+        
+        	// Clip the polygon and returns a new polygon with potential new vertices
+        	Clip::clip_polygon(&polygon);
 
-            	// Calculate the triangle color based on the light angle
-            	triangle.color = light_intensity_factor;// light->apply_light_intensity(0xFFFFFFFF, 1);
-            	
-		
-		
-		// Clip Polygons
-		// Loop all Clipped Triangles
-			// lop 3 vertices
-				//projectionMatrix
-		
-		
-		// create the triangle to be rendered
-		Triangle triangle_to_render;
-		for (int v = 0; v<3 ; v++){
-		
-			// Get the color
-			triangle_to_render.color = triangle.color;
-			//Projection Matrix
-			triangle_to_render.vertices[v] = glm::vec3(proj_matrix * glm::vec4(transformed_vertices[v], 1.0f));
-			// triangle_to_render.vertices[v] = transformed_vertices[v];
+        	// Break the clipped polygon apart back into individual triangles
+        	Triangle triangles_after_clipping[MAX_NUM_POLY_TRIANGLES];
+        	int num_triangles_after_clipping = 0;
+
+        	Clip::triangles_from_polygon(&polygon, triangles_after_clipping, &num_triangles_after_clipping);
+
+        	// Loops all the assembled triangles after clipping
+		for (int t = 0; t < num_triangles_after_clipping; t++) {
+            		Triangle triangle_after_clipping = triangles_after_clipping[t];
+
 			
-			// Perspective divide
-			if (triangle_to_render.vertices[v].z != 0){
-				triangle_to_render.vertices[v].x /= triangle_to_render.vertices[v].z;  
-				triangle_to_render.vertices[v].y /= triangle_to_render.vertices[v].z;  
+			// TODO FLAT SHADING
+			 
+			// Calculate the shade intensity based on how aliged is the normal with the flipped light direction ray
+		    	float light_intensity_factor = -glm::dot(normal, light->direction);
+		    	// Calculate the triangle color based on the light angle
+		    	triangle_after_clipping.color = light_intensity_factor;// light->apply_light_intensity(0xFFFFFFFF, 1);
+		    	
+			
+			
+			// Clip Polygons
+			// Loop all Clipped Triangles
+				// lop 3 vertices
+					//projectionMatrix
+			
+			
+			// create the triangle to be rendered
+			Triangle triangle_to_render;
+			for (int v = 0; v<3 ; v++){
+			
+				// Get the color
+				triangle_to_render.color = triangle_after_clipping.color;
+				//Projection Matrix
+				triangle_to_render.vertices[v] = glm::vec3(proj_matrix * glm::vec4(triangle_after_clipping.vertices[v], 1.0f)); // transformed_vertices[v]
+				// triangle_to_render.vertices[v] = transformed_vertices[v];
+				
+				// Perspective divide
+				if (triangle_to_render.vertices[v].z != 0){
+					triangle_to_render.vertices[v].x /= triangle_to_render.vertices[v].z;  
+					triangle_to_render.vertices[v].y /= triangle_to_render.vertices[v].z;  
+				}
+				
+				// Flip the coordinates vertically
+				//triangle_to_render.vertices[v].y *= -1;
+				
+				// Scale into the view (zoom into the objects)
+		        	triangle_to_render.vertices[v].x *= (display->window_width / 2.0);
+				triangle_to_render.vertices[v].y *= (display->window_height / 2.0);
+				// Translate to middle of the screen
+				triangle_to_render.vertices[v].x += (display->window_width / 2.0);
+				triangle_to_render.vertices[v].y += (display->window_height / 2.0);
 			}
 			
-			// Flip the coordinates vertically
-			//triangle_to_render.vertices[v].y *= -1;
 			
-			// Scale into the view (zoom into the objects)
-                	triangle_to_render.vertices[v].x *= (display->window_width / 2.0);
-			triangle_to_render.vertices[v].y *= (display->window_height / 2.0);
-			// Translate to middle of the screen
-			triangle_to_render.vertices[v].x += (display->window_width / 2.0);
-			triangle_to_render.vertices[v].y += (display->window_height / 2.0);
-		}
-		
-		
-		
-		// add to triangles to render;
-		triangles_to_render.push_back(triangle_to_render);
+			
+			// add to triangles to render;
+			triangles_to_render.push_back(triangle_to_render);
+			}
 	}
 }
 

@@ -5,6 +5,7 @@
 #include <SDL2/SDL.h>
 #include "Display.h"
 #include "Camera.h"
+#include "Clipping.h"
 #include "Light.h"
 #include "Mesh.h"
 #include "Triangle.h"

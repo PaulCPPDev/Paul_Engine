@@ -22,6 +22,17 @@ void Display::clear_color_buffer(uint32_t color){
 }
 
 /**
+ * @brief function that clears the z-Buffer
+ * @param uint32_t color
+ */
+void Display::clear_z_buffer(){
+	int size = window_width * window_height;
+	for (int i= 0; i < size; i++){
+		z_buffer[i] = 0.0;
+	}
+}
+
+/**
  * @brief function to draw/change the color of a pixel at position (pos_x, pos_y) of the display
  * @param[in] pos_x the x position of the pixel on the display.
  * @param[in] pos_y the y position of the pixel on the display.
@@ -29,6 +40,18 @@ void Display::clear_color_buffer(uint32_t color){
 void Display::draw_pixel(int pos_x, int pos_y, uint32_t color){
 	if(pos_x > 0 && pos_y > 0 && pos_x < window_width && pos_y < window_height)
 		color_buffer[(pos_y * window_width) + pos_x] = color;
+}
+
+
+/**
+ * @brief function to draw/change the color of a tirangle_pixel at position (pos_x, pos_y) of the display
+ * @param[in] pos_x the x position of the pixel on the display.
+ * @param[in] pos_y the y position of the pixel on the display.
+ */
+void Display::draw_triangle_pixel(int pos_x, int pos_y, uint32_t color){
+	if(pos_x > 0 && pos_y > 0 && pos_x < window_width && pos_y < window_height){
+			color_buffer[(pos_y * window_width) + pos_x] = color;
+		}
 }
 
 
@@ -140,13 +163,16 @@ void Display::draw_unfilled_triangle(int x0, int y0, int x1, int y1, int x2, int
  * @param[in] y1 the y position of the second point on the display.
  * @param[in] color the color. 
  */
-void Display::draw_filled_triangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color){
+void Display::draw_filled_triangle(int x0, int y0, int z0, int x1, int y1, int z1, int x2, int y2, int z2, uint32_t color){
 	// Flat bottom Flat Top Technique
 	// Sort the vertices by y
-	Display::sortVerticesByY(x0, y0, x1, y1, x2, y2);
+	Display::sortVerticesByY(x0, y0, z0, x1, y1, z1, x2, y2, z2);
 	// Divide the triangle into 2
 	int x_mid = ((x2-x0)*(y1-y0)/ (float) (y2-y0)) + x0;
 	int y_mid = y1;
+	
+	//TODO Z_buffer rendering
+	
 	// Draw flat bottom triangle
 	draw_flat_bottom_triangle(x0, y0, x1, y1, x_mid, y_mid, color);
 	// Draw flat top triangle
@@ -161,10 +187,11 @@ void Display::destroy(){
 
 
 // Function to sort the vertices of a triangle by y-coordinates
-void Display::sortVerticesByY(int& x0, int& y0, int& x1, int& y1, int& x2, int& y2) {
+void Display::sortVerticesByY(int& x0, int& y0,  int& z0, int& x1, int& y1,  int& z1, int& x2, int& y2,  int& z2) {
     // Create arrays to hold the vertices
     int x[3] = {x0, x1, x2};
     int y[3] = {y0, y1, y2};
+    int z[3] = {z0, z1, z2};
 
     // Sort the vertices based on y-coordinates
     for (int i = 0; i < 2; ++i) {
@@ -172,6 +199,7 @@ void Display::sortVerticesByY(int& x0, int& y0, int& x1, int& y1, int& x2, int& 
             if (y[j] > y[j + 1]) {
                 std::swap(y[j], y[j + 1]);
                 std::swap(x[j], x[j + 1]);
+                std::swap(z[j], z[j + 1]);
             }
         }
     }
