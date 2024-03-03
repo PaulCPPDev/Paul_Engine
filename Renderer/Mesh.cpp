@@ -18,14 +18,14 @@
 
 //cube vertex coords
 std::array<glm::vec3, N_CUBE_VERTEX_COORD> cube_vertex_coords = {
-	glm::vec3(-1, -1, -1 ), // 1
-	glm::vec3(-1, 1, -1 ), // 2
-	glm::vec3(1, 1, -1 ), // 3
-	glm::vec3(1, -1, -1 ), // 4
-	glm::vec3(1, 1, 1 ), // 5
-	glm::vec3(1, -1, 1 ), // 6
-	glm::vec3(-1, 1, 1 ), // 7
-	glm::vec3(-1, -1, 1 )  // 8
+  glm::vec3(-1, -1, -1 ), // 1
+  glm::vec3(-1, 1, -1 ), // 2
+  glm::vec3(1, 1, -1 ), // 3
+  glm::vec3(1, -1, -1 ), // 4
+  glm::vec3(1, 1, 1 ), // 5
+  glm::vec3(1, -1, 1 ), // 6
+  glm::vec3(-1, 1, 1 ), // 7
+  glm::vec3(-1, -1, 1 )  // 8
 };
 
 /*
@@ -122,44 +122,44 @@ void Mesh::load_cube_mesh_data(void) {
 
 
 void Mesh::load_obj_file(const std::string& path){
-    std::ifstream file(path);
+  std::ifstream file(path);
     
-    if (!file.is_open()) {
-        std::cerr << "Error: Unable to open file " << path << std::endl;
-    }
+  if (!file.is_open()) {
+    std::cerr << "Error: Unable to open file " << path << std::endl;
+  }
 
-    std::string line;
-    while (std::getline(file, line)) {
-        std::istringstream iss(line);
-        std::string token;
-        iss >> token;
+  std::string line;
+  while (std::getline(file, line)) {
+    std::istringstream iss(line);
+    std::string token;
+    iss >> token;
 
-        if (token == "v") {
-            glm::vec3 vertex;
-            iss >> vertex.x >> vertex.y >> vertex.z;
-            vertices.push_back(vertex);
-        } else if (token == "f") {
-            	// Create triangle
-	    	Triangle cube_triangle;
-	    	Face cube_face;
-	    	//get vertex indices
-	    	for(int j = 0; j < 3 ; j++){
-	    		char separator;
-	    		float garbage;
-	    		iss >> cube_face.index[j] >> separator
-	    		    >> garbage >> separator
-	    		    >> garbage;
-	    		// we subtract one bcz the obj file starts at 1
-	    		cube_triangle.vertices[j] = this->vertices[ cube_face.index[j] -1];
-	    	}
-	    	// push the triangle to the vector of triangles
-	    	triangles.emplace_back(cube_triangle);
-		}
+    if (token == "v") {
+      glm::vec3 vertex;
+      iss >> vertex.x >> vertex.y >> vertex.z;
+      vertices.push_back(vertex);
+    } else if (token == "f") {
+      // Create triangle
+      Triangle cube_triangle;
+      Face cube_face;
+      //get vertex indices
+      for(int j = 0; j < 3 ; j++){
+        char separator;
+	float garbage;
+	iss >> cube_face.index[j] >> separator
+	    >> garbage >> separator
+	    >> garbage;
+	// we subtract one bcz the obj file starts at 1
+	cube_triangle.vertices[j] = this->vertices[ cube_face.index[j] -1];
+	}
+	// push the triangle to the vector of triangles
+	triangles.emplace_back(cube_triangle);
+	}
         
-        else {}
-    }
+      else {}
+  }
 
-    file.close();
+  file.close();
 }
 
 

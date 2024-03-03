@@ -7,145 +7,145 @@
  * @copyright University of Bern Applied Sciences
  */
 
-#include "Graphics.h"
-#include <glm/gtc/matrix_transform.hpp>
+#include "Renderer.h"
+
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
 
+#include <glm/gtc/matrix_transform.hpp>
+
 #define FOV_SCALING_FACTOR 512
 
-
-void Graphics::init(){
-	
-	// Initialize the display object
-	this->display = new Display();
+namespace renderer {
+void Renderer::init() {
+  // Initialize the display object
+  this->display = new display::Display();
 		
-	// Initialize SDL
-	if(SDL_Init(SDL_INIT_EVERYTHING) != 0){
-		// Log the error code
-		std::cout << "Error Initializing SDL" << std::endl;
-		this->isRunning = false;
-	}
+  // Initialize SDL
+  if(SDL_Init(SDL_INIT_EVERYTHING) != 0){
+    // Log the error code
+    std::cout << "Error Initializing SDL" << std::endl;
+    this->isRunning = false;
+  }
 	
-	// Get the Full screen resolution of the current display(0)
-	SDL_DisplayMode display_mode;
-	SDL_GetCurrentDisplayMode(0, &display_mode);
-	this->display->window_width = display_mode.w;
-	this->display->window_height = display_mode.h;
+  // Get the Full screen resolution of the current display(0)
+  SDL_DisplayMode display_mode;
+  SDL_GetCurrentDisplayMode(0, &display_mode);
+  this->display->window_width = display_mode.w;
+  this->display->window_height = display_mode.h;
 
 	
-	display->window = SDL_CreateWindow(NULL, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, this->display->window_width, this->display->window_height, SDL_WINDOW_BORDERLESS );
-	if(display->window == NULL){
-		// Log the error code
-		std::cout << "Eror Creating SDL Window" << std::endl;
-		this->isRunning = false;
-	}
+  display->window = SDL_CreateWindow(NULL, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, this->display->window_width, this->display->window_height, SDL_WINDOW_BORDERLESS );
+  if(display->window == NULL){
+    // Log the error code
+    std::cout << "Eror Creating SDL Window" << std::endl;
+    this->isRunning = false;
+  }
 	
-	display->renderer = SDL_CreateRenderer(display->window, -1, 0);
-	if (display->renderer == NULL){
-		// Log the error code
-		std::cout << "Error Creating SDL Renderer" << std::endl;
-		this->isRunning = false;
-	}
+  display->renderer = SDL_CreateRenderer(display->window, -1, 0);
+  if (display->renderer == NULL){
+    // Log the error code
+    std::cout << "Error Creating SDL Renderer" << std::endl;
+    this->isRunning = false;
+  }
 	
-	// Make the window true full screen 
-	if(SDL_SetWindowFullscreen(this->display->window, SDL_WINDOW_FULLSCREEN) != 0){
-		// Log the error code
-		// std::cout << "Error making the window full screen" << std::endl; // This doesn't work
-	}
+  // Make the window true full screen 
+  if(SDL_SetWindowFullscreen(this->display->window, SDL_WINDOW_FULLSCREEN) != 0){
+    // Log the error code
+    // std::cout << "Error making the window full screen" << std::endl; // This doesn't work
+  }
 	
-	//color buffer
-	this->display->color_buffer = new uint32_t[this->display->window_width * this->display->window_height];
+  //color buffer
+  this->display->color_buffer = new uint32_t[this->display->window_width * this->display->window_height];
 	
-	// Create a color buffer texture to access every single pixel on the screen
-	this->display->color_buffer_texture = SDL_CreateTexture(display->renderer, 
+  // Create a color buffer texture to access every single pixel on the screen
+  this->display->color_buffer_texture = SDL_CreateTexture(display->renderer, 
 				SDL_PIXELFORMAT_RGBA8888, 
 				SDL_TEXTUREACCESS_STREAMING,
 				this->display->window_width,
 				this->display->window_height);
 				
-	// z buffer
-	this->display->z_buffer = new float[this->display->window_width * this->display->window_height];
+  // z buffer
+  this->display->z_buffer = new float[this->display->window_width * this->display->window_height];
 }
 
-void Graphics::set_up(){
-	this->init();
+void Renderer::set_up(){
+  this->init();
 	
-	// Projection Matrix information
-	// Initialize the perspective projection matrix
-    	float aspect_y = (float)display->window_height / (float)display->window_width;
-    	float aspect_x = (float)display->window_width / (float)display->window_height;
-    	float fov_y = 3.141592 / 3.0; // the same as 180/3, or 60deg
-    	float fov_x = atan(tan(fov_y / 2) * aspect_x) * 2;
-    	float znear = 1.0;
-    	float zfar = 20.0;
-    	//proj_matrix = this->projection_matrix(fov_y, aspect_y, znear, zfar);
-    	proj_matrix = glm::perspective(fov_y, aspect_x, znear, zfar);
+  // Projection Matrix information
+  // Initialize the perspective projection matrix
+  float aspect_y = (float)display->window_height / (float)display->window_width;
+  float aspect_x = (float)display->window_width / (float)display->window_height;
+  float fov_y = 3.141592 / 3.0; // the same as 180/3, or 60deg
+  float fov_x = atan(tan(fov_y / 2) * aspect_x) * 2;
+  float znear = 1.0;
+  float zfar = 20.0;
+  //proj_matrix = this->projection_matrix(fov_y, aspect_y, znear, zfar);
+  proj_matrix = glm::perspective(fov_y, aspect_x, znear, zfar);
     	
 
-    	// Initialize frustum planes with a point and a normal
-    	Clip::init_frustum_planes(fov_x, fov_y, znear, zfar);
+  // Initialize frustum planes with a point and a normal
+  clip::Clip::init_frustum_planes(fov_x, fov_y, znear, zfar);
     	
     	
-    	// Global ilumination
-    	light = new Light(glm::vec3(0,0,1));
+  // Global ilumination
+  light = new Light(glm::vec3(0,0,1));
     	
-	// initialize camera
-	camera = new Camera();
+  // initialize camera
+  camera = new camera::Camera();
 	
 	
-	// load cube mesh data
-	// load .obj files
-	Mesh* mesh = new Mesh();
+  // load cube mesh data
+  // load .obj files
+  Mesh* mesh = new Mesh();
 	
-	//mesh->load_cube_mesh_data();
-	mesh->load_obj_file("./Dev/cube.obj");
-	meshes.push_back(*mesh);
+  //mesh->load_cube_mesh_data();
+  mesh->load_obj_file("./Dev/cube.obj");
+  meshes.push_back(*mesh);
 	
-	// new code
-	meshes[0].scale = glm::vec3(1,1,1);
-	meshes[0].rotate  = glm::vec3(0,0,0);
-	meshes[0].translate = glm::vec3(0,0,5);
-	
-		
-	// load cube mesh data
-	// load .obj files
-	Mesh* mesh1 = new Mesh();
-	
-	//mesh->load_cube_mesh_data();
-	mesh1->load_obj_file("./Dev/crab.obj");
-	meshes.push_back(*mesh1);
-	
-	// new code
-	meshes[1].scale = glm::vec3(1,1,1);
-	meshes[1].rotate  = glm::vec3(0,0,0);
-	meshes[1].translate = glm::vec3(0,0,-10);
+  // new code
+  meshes[0].scale = glm::vec3(1,1,1);
+  meshes[0].rotate  = glm::vec3(0,0,0);
+  meshes[0].translate = glm::vec3(0,0,5);
 	
 		
-	// load cube mesh data
-	// load .obj files
-	Mesh* mesh2 = new Mesh();
+  // load cube mesh data
+  // load .obj files
+  Mesh* mesh1 = new Mesh();
 	
-	//mesh->load_cube_mesh_data();
-	mesh2->load_obj_file("./Dev/sphere.obj");
-	meshes.push_back(*mesh2);
+  //mesh->load_cube_mesh_data();
+  mesh1->load_obj_file("./Dev/crab.obj");
+  meshes.push_back(*mesh1);
 	
-	// new code
-	meshes[2].scale = glm::vec3(1,1,1);
-	meshes[2].rotate  = glm::vec3(0,0,0);
-	meshes[2].translate = glm::vec3(-10,0,-5);
-	
+  // new code
+  meshes[1].scale = glm::vec3(1,1,1);
+  meshes[1].rotate  = glm::vec3(0,0,0);
+  meshes[1].translate = glm::vec3(0,0,-10);
 	
 		
+  // load cube mesh data
+  // load .obj files
+  Mesh* mesh2 = new Mesh();
+	
+  //mesh->load_cube_mesh_data();
+  mesh2->load_obj_file("./Dev/sphere.obj");
+  meshes.push_back(*mesh2);
+	
+  // new code
+  meshes[2].scale = glm::vec3(1,1,1);
+  meshes[2].rotate  = glm::vec3(0,0,0);
+  meshes[2].translate = glm::vec3(-10,0,-5);
+			
 }
 
-bool Graphics::is_running(){
-	return isRunning;
+bool Renderer::is_running(){
+  return isRunning;
 }
 
 
-void Graphics::process_input(){
+void Renderer::process_input(){
 	SDL_Event event;
 	while(SDL_PollEvent(&event)){
 		switch (event.type){
@@ -193,7 +193,7 @@ void Graphics::process_input(){
 }
 
 
-void Graphics::update(){
+void Renderer::update(){
 	triangles_to_render.clear();
 	// update the rotation of the mesh
 	meshes[0].rotate  += glm::vec3(0.2, 0.2, 0);
@@ -204,7 +204,7 @@ void Graphics::update(){
 	
 }
 
-void Graphics::render(){
+void Renderer::render(){
 	SDL_SetRenderDrawColor(display->renderer, 255, 0, 0, 255);
 	SDL_RenderClear(display->renderer);
 	display->clear_color_buffer(0x141414d9);
@@ -233,7 +233,7 @@ void Graphics::render(){
 	
 }
 
-void Graphics::destroy(){
+void Renderer::destroy(){
 	delete this->camera;
 	delete this->display->color_buffer;
 	display->destroy();
@@ -245,7 +245,7 @@ void Graphics::destroy(){
 
 
 // Graphics pipeline applied to every mesh
-void Graphics::pipeline(Mesh& mesh){
+void Renderer::pipeline(Mesh& mesh){
 	// Create world Matrix Scale Rotate Translate
 		// scaling matrix
 		glm::mat4 scaling_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(mesh.scale.x, mesh.scale.y, mesh.scale.z) );
@@ -316,20 +316,20 @@ void Graphics::pipeline(Mesh& mesh){
 		
 		// TODO CLIPPING      
         	// Create a polygon from the original transformed triangle to be clipped
-        	polygon_t polygon = Clip::polygon_from_triangle(
+        	polygon_t polygon = clip::Clip::polygon_from_triangle(
             		transformed_vertices[0],
             		transformed_vertices[1],
             		transformed_vertices[2]
         		);
         
         	// Clip the polygon and returns a new polygon with potential new vertices
-        	Clip::clip_polygon(&polygon);
+        	clip::Clip::clip_polygon(&polygon);
 
         	// Break the clipped polygon apart back into individual triangles
         	Triangle triangles_after_clipping[MAX_NUM_POLY_TRIANGLES];
         	int num_triangles_after_clipping = 0;
 
-        	Clip::triangles_from_polygon(&polygon, triangles_after_clipping, &num_triangles_after_clipping);
+        	clip::Clip::triangles_from_polygon(&polygon, triangles_after_clipping, &num_triangles_after_clipping);
 
         	// Loops all the assembled triangles after clipping
 		for (int t = 0; t < num_triangles_after_clipping; t++) {
@@ -388,7 +388,7 @@ void Graphics::pipeline(Mesh& mesh){
 
 
 
-glm::mat4  Graphics::projection_matrix(float fov, float aspect, float znear, float zfar){
+glm::mat4  Renderer::projection_matrix(float fov, float aspect, float znear, float zfar){
 	// | (h/w)*1/tan(fov/2)             0              0                 0 |
     	// |                  0  1/tan(fov/2)              0                 0 |
    	// |                  0             0     zf/(zf-zn)  (-zf*zn)/(zf-zn) |
@@ -402,6 +402,7 @@ glm::mat4  Graphics::projection_matrix(float fov, float aspect, float znear, flo
     return projection_matrix;
 }
 
+} // namespace renderer
 
 
 

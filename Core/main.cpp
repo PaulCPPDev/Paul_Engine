@@ -12,14 +12,14 @@
 
 int main() {
 
-	App app;
+  App app;
+  app.set_up();
 
-	app.set_up();
-
-	while(app.is_running()){
-		app.process_input();
-		app.update();
-		app.render();
-	}
-	app.destroy();
+  while(app.is_running()){
+    app.process_input();
+    app.update();
+    app.render();
+  }
+  app.destroy();
+  
 }

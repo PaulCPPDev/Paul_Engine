@@ -1,5 +1,5 @@
-#ifndef FACE_H
-#define FACE_H
+#ifndef PAULENGINE_RENDERER_FACE_H_
+#define PAULENGINE_RENDERER_FACE_H_
 
 #include <array>
 #include <glm/glm.hpp>
@@ -8,13 +8,15 @@
 //////////////////// FACE ///////////////////////////
 /////////////////////////////////////////////////////
 
-//Mesh --> Triangles --> Vertices --> (index.(a,b,c), coordinates ex x,y,z,w)
-//                   --> color
+/**
+ * @brief Face is a triangle that contrains the vertex indices
+ */
+
 class Face {
-	public:
-		// vetex indices
-		std::array<int, 3> index;
-		
+  public:
+    // vetex indices
+    std::array<int, 3> index;	
 };
+
 
 #endif

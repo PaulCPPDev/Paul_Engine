@@ -4,7 +4,7 @@
 CC = g++
 LANG_STD = -std=c++17
 COMPILER_FLAGS = -g -Wall -Wfatal-errors
-INCLUDE_PATH = -I"./libs/"
+INCLUDE_PATH = -I"./libs/" -I"./"
 SRC_FILES = ./Core/main.cpp \
 	    ./Core/*/*.cpp \
 	    ./Renderer/*.cpp

@@ -1,23 +1,32 @@
-#ifndef APP_H
-#define APP_H
+#ifndef PAULENGINE_CORE_APP_H
+#define PAULENGINE_CORE_APP_H
 
-#include "../../Renderer/Graphics.h"
+
+#include "Renderer/IRenderer.h"
+#include "Renderer/Renderer.h"
+
+#include <memory>
+
 #include <SDL2/SDL.h>
 
 class App {
-	private:
-		Graphics graphics;
+  private:
+    std::unique_ptr<renderer::IRenderer> renderer;
 
-	public:
-		App() = default;
-		~App() = default;
+  public:
+    App()
+    : renderer( std::make_unique<renderer::Renderer>() ){
+    };
+    ~App() {
+    	//delete renderer;
+    };
 
-		void set_up();
-		bool is_running();
-                void process_input();
-                void update();
-                void render();
-                void destroy();
+    void set_up();
+    bool is_running();
+    void process_input();
+    void update();
+    void render();
+    void destroy();
 };
 
 #endif
