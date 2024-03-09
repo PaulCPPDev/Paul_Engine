@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include "./App/App.h"
+#include "./ECS/ECS.h"
 
 int main() {
 
